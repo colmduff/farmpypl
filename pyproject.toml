@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "farmpypl"
+version = "0.1.0"
+description = "A short description of the package."
+authors = ["Colm Duffy <colm.p.duffy@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "farmpypl", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+black = "*"
+ipykernel = "*"
+# Docs toolchain. Keep these constraints in sync with docs/requirements.txt,
+# which Read the Docs installs.
+#
+# sphinx-autoapi >=3.8 is required: older AutoAPI calls astroid's
+# ``AstroidBuilder()`` with no arguments, which astroid 4 rejects. AutoAPI
+# swallows that TypeError as "Unable to read file" and emits an *empty* API
+# reference while still exiting 0 - a green build with no API docs.
+sphinx = ">=7.0"
+sphinx-autoapi = ">=3.8"
+myst-nb = ">=1.0"
+sphinx-rtd-theme = ">=2.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["*_test.py", "test_*.py"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

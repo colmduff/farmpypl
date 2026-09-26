@@ -1,0 +1,9 @@
+# Docs build requirements (used by .readthedocs.yml).
+# Keep these constraints in sync with the dev group in pyproject.toml.
+#
+# sphinx-autoapi >=3.8 is deliberate: older AutoAPI is incompatible with
+# astroid 4 and silently emits an *empty* API reference while exiting 0.
+sphinx>=7.0
+sphinx-autoapi>=3.8
+myst-nb>=1.0
+sphinx-rtd-theme>=2.0
