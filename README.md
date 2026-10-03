@@ -4,7 +4,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![docs](https://readthedocs.org/projects/farmpypl/badge/?version=latest)](https://farmpypl.readthedocs.io/en/latest/)
 
- A short description of the package.
+ Income and organic-conversion calculator for an Irish dairy farm.
 
 ## Installation
 

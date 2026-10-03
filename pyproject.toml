@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "farmpypl"
 version = "0.1.0"
-description = "A short description of the package."
+description = "Income and organic-conversion calculator for an Irish dairy farm."
 authors = ["Colm Duffy <colm.p.duffy@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -9,6 +9,7 @@ packages = [{ include = "farmpypl", from = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+pydantic = "^2.13.5"
 
 
 [tool.poetry.group.dev.dependencies]

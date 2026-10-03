@@ -1,4 +1,4 @@
-"""farmpypl: A short description of the package."""
+"""farmpypl: Income and organic-conversion calculator for an Irish dairy farm."""
 
 from importlib.metadata import PackageNotFoundError, version
 

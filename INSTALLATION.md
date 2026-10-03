@@ -8,6 +8,7 @@ Requirements
 The software requires the following:
 
 - Python 3.10 or higher
+- pydantic 2.x (installed automatically)
 
 
 Install with pip
