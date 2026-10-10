@@ -7,8 +7,9 @@ Requirements
 ------------
 The software requires the following:
 
-- Python 3.10 or higher
+- Python 3.11 or higher
 - pydantic 2.x (installed automatically)
+- pandas 3.x (installed automatically)
 
 
 Install with pip
