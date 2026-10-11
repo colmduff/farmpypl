@@ -2,8 +2,9 @@
 
 from importlib.metadata import PackageNotFoundError, version
 from farmpypl.core import FarmManager
+from farmpypl.db import refresh_prices
 
-__all__ = ["FarmManager"]   
+__all__ = ["FarmManager", "refresh_prices"]
 
 try:
     __version__ = version("farmpypl")

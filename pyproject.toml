@@ -11,6 +11,10 @@ packages = [{ include = "farmpypl", from = "src" }]
 python = "^3.11"
 pydantic = "^2.13.5"
 pandas = "^3.0.6"
+openpyxl = {version = "^3.1.5", optional = true}  # only refresh_prices() needs it (Oil Bulletin .xlsx)
+
+[tool.poetry.extras]
+refresh = ["openpyxl"]
 
 
 [tool.poetry.group.dev.dependencies]
@@ -32,6 +36,8 @@ sphinx-rtd-theme = ">=2.0"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["*_test.py", "test_*.py"]
+addopts = "-m 'not network'"   # live API tests run only with: pytest -m network
+markers = ["network: calls the real price APIs"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

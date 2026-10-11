@@ -12,7 +12,7 @@ import pandas as pd
 
 from farmpypl.calculators import CostCalculator, HerdCalculator
 from farmpypl.common.constants import LU_COEFF
-from farmpypl.db import connect, load_benchmark, load_prices
+from farmpypl.db import connect, load_benchmark, load_prices, price_status
 from farmpypl.farms import DairyFarm
 from farmpypl.loaders import load_profiles
 
@@ -21,27 +21,31 @@ class FarmManager:
 
     def __init__(self, farms: list[DairyFarm],
                  benchmarks: dict[str, dict[str, float]],
-                 prices: dict[str, float]):
+                 prices: dict[str, float],
+                 price_info: list[dict] | None = None):
         self.farms = farms
         self.benchmarks = benchmarks
         self.prices = prices
+        self.price_info = price_info or []
 
     @classmethod
     def from_csv(cls, path: str | Path) -> "FarmManager":
-        """Read a farm profile CSV, then the NFS benchmarks and CSO prices those farms need.
+        """Read a farm profile CSV, then the NFS benchmarks and prices those farms need.
 
         Route: load_profiles (read + check) -> .to_farm() (checked -> trusted);
-        nfs.db and cso.db are opened once, read-only, and closed straight after.
+        nfs.db and prices.db are opened once, read-only, and closed straight after.
+        prices.db is the refreshed user copy if there is one, else the bundled snapshot.
         """
         profiles = load_profiles(path)  
         farms =[profile.to_farm() for profile in profiles]
 
         with closing(connect("nfs.db")) as nfs:
             benchmarks = {t: load_benchmark(nfs, t) for t in {farm.farm_type for farm in farms}}
-        with closing(connect("cso.db")) as cso:
-            prices = load_prices(cso)
+        with closing(connect("prices.db")) as con:
+            prices = load_prices(con)
+            price_info = price_status(con)
 
-        return cls(farms=farms, benchmarks=benchmarks, prices=prices)   
+        return cls(farms=farms, benchmarks=benchmarks, prices=prices, price_info=price_info)   
 
     def herd_summary(self) -> pd.DataFrame:
         """One row per farm: the headline herd figures.
@@ -96,3 +100,6 @@ class FarmManager:
                 rows.append({"farm_name": farm.farm_name, **asdict(line)})
         return pd.DataFrame(rows).round({"volume": 0, "eur": 0})
 
+    def price_summary(self) -> pd.DataFrame:
+        """One row per price the costs use: 12-month mean, window, fetch date, file."""
+        return pd.DataFrame(self.price_info).round({"mean_12mo": 4})

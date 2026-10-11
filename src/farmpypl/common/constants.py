@@ -427,13 +427,14 @@ NFS_BENCHMARK_ITEMS: dict[str, list[tuple[str, str]]] = {
     "labour_units":     [("LABOUR UNITS", "Total")],
 }
 
-# Price series in cso.db (item names verbatim), by our own short name. All are the
+# Price series in prices.db (item names verbatim), by our own short name. All are the
 # price actually paid, taxes included. Sources, cadence and staleness: DATA-SOURCES.md.
 PRICE_ITEMS: dict[str, str] = {
     "concentrates": "Dairy nuts and cubes (16-18% protein)",         # CSO AJM08, EUR/t, monthly
     "fertiliser": "Calcium Ammonium Nitrate (27.5% N)",                # CSO AJM09, EUR/t, monthly
     "diesel": "Heating gas oil (Ireland), with taxes",                 # EU Oil Bulletin, EUR/L, weekly
     "electricity": "Electricity, non-household band IA (<20 MWh), all taxes",  # Eurostat nrg_pc_205, EUR/kWh, half-yearly
+    "road_diesel": "Automotive gas oil (Ireland), with taxes",          # EU Oil Bulletin, EUR/L, weekly
 }
 CAN_N_FRACTION: float = 0.275        # kg N per kg of CAN
 HOURS_PER_LABOUR_UNIT: float = 1800  # NFS definition of one labour unit

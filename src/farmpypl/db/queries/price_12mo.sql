@@ -1,4 +1,4 @@
--- db: cso.db
+-- db: prices.db
 -- Mean of one price series over the 12 months up to its latest observation.
 --
 -- Params:  :item   e.g. 'Dairy nuts and cubes (16-18% protein)'
@@ -7,8 +7,8 @@
 --
 -- Works for any frequency because the window is a date range, not a row count:
 -- monthly CSO prices give 12 rows, weekly Oil Bulletin diesel about 52, and
--- half-yearly Eurostat electricity 2. (cso_milk_price_12mo.sql takes the last 12
--- rows, which is right only for monthly series.)
+-- half-yearly Eurostat electricity 2. A "last 12 rows" query would be right
+-- only for monthly series.
 WITH series AS (
     SELECT value, period, period_date
     FROM prices

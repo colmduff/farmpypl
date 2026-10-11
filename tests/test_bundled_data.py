@@ -5,6 +5,7 @@ out of the box, whatever the calculators do.
 """
 
 import sqlite3
+from datetime import date, timedelta
 from importlib.resources import files
 
 import pytest
@@ -36,13 +37,13 @@ def test_nfs_snapshot_has_benchmarks_and_no_prices():
         assert "prices" not in tables(con)
 
 
-def test_cso_snapshot_has_prices_and_no_benchmarks():
-    with open_ro("cso.db") as con:
+def test_prices_snapshot_has_prices_and_no_benchmarks():
+    with open_ro("prices.db") as con:
         assert {"prices", "prices_latest", "refresh_log"} <= tables(con)
         assert "observations" not in tables(con)
 
 
-@pytest.mark.parametrize("name", ["nfs.db", "cso.db"])
+@pytest.mark.parametrize("name", ["nfs.db", "prices.db"])
 def test_snapshots_are_not_wal(name):
     # A WAL database cannot be opened from a read-only install directory.
     with open_ro(name) as con:
@@ -50,7 +51,7 @@ def test_snapshots_are_not_wal(name):
 
 
 def test_read_only_really_is_read_only():
-    with open_ro("cso.db") as con, pytest.raises(sqlite3.OperationalError):
+    with open_ro("prices.db") as con, pytest.raises(sqlite3.OperationalError):
         con.execute("DELETE FROM prices")
 
 
@@ -83,31 +84,41 @@ def prices_db():
     con.close()
 
 
-def test_milk_12mo_window_ends_at_latest_period_date(prices_db):
-    r = prices_db.execute(sql("cso_milk_price_12mo.sql"), {"item": MILK}).fetchone()
-    mean, lo, hi, n, first, last, last_date = r
+def test_12mo_window_ends_at_latest_period_date(prices_db):
+    r = prices_db.execute(sql("price_12mo.sql"), {"item": MILK}).fetchone()
+    mean, n, first, last, last_date = r
     assert n == 12
     assert (first, last, last_date) == ("2025 August", "2026 July", "2026-07-01")
     # Aug..Dec 2025 = 8..12, Jan..Jul 2026 = 1..7, all /100
     assert mean == pytest.approx((sum(range(8, 13)) + sum(range(1, 8))) / 1200)
 
 
-def test_milk_12mo_unknown_item_reports_zero_months(prices_db):
-    r = prices_db.execute(sql("cso_milk_price_12mo.sql"), {"item": "Nope"}).fetchone()
-    assert r[3] == 0 and r[0] is None
+def test_12mo_window_is_by_date_not_row_count(prices_db):
+    # 60 weekly prices: the window must hold the last year (~52), not the last 12 rows.
+    start = date(2025, 1, 6)
+    weeks = [("EU_WOB", "Diesel", str(i), (start + timedelta(weeks=i)).isoformat(), 1.0)
+             for i in range(60)]
+    prices_db.executemany("INSERT INTO prices VALUES (?,?,?,?,?)", weeks)
+    n = prices_db.execute(sql("price_12mo.sql"), {"item": "Diesel"}).fetchone()[1]
+    assert 51 <= n <= 53
 
 
-def test_newest_month_puts_stalest_series_first(prices_db):
-    rows = prices_db.execute(sql("cso_newest_month.sql")).fetchall()
-    assert rows[0] == ("AJM08", "2026-05-01", "2026-05-31")
-    assert rows[1] == ("AJM10", "2026-07-01", "2026-07-31")
+def test_12mo_unknown_item_reports_zero_rows(prices_db):
+    r = prices_db.execute(sql("price_12mo.sql"), {"item": "Nope"}).fetchone()
+    assert r[1] == 0 and r[0] is None
 
 
-def test_last_attempt_empty_then_newest(prices_db):
-    assert prices_db.execute(sql("cso_last_attempt.sql")).fetchall() == []
+def test_newest_period_puts_stalest_series_first(prices_db):
+    rows = prices_db.execute(sql("newest_period.sql")).fetchall()
+    assert rows[0] == ("AJM08", "2026-05-01")
+    assert rows[1] == ("AJM10", "2026-07-01")
+
+
+def test_last_refresh_empty_then_newest(prices_db):
+    assert prices_db.execute(sql("last_refresh.sql")).fetchall() == []
     prices_db.executemany("INSERT INTO refresh_log VALUES (?,?,?,?)", [
-        ("2026-09-01T09:00:00+00:00", 1, 7558, None),
-        ("2026-09-20T09:00:00+00:00", 0, 0, "unreachable: AJM10"),
+        ("2026-09-01T09:00:00+00:00", 1, 7558, "CSO AJM10: ok"),
+        ("2026-09-20T09:00:00+00:00", 0, 0, "CSO AJM10: URLError"),
     ])
-    assert prices_db.execute(sql("cso_last_attempt.sql")).fetchone()[0] == \
+    assert prices_db.execute(sql("last_refresh.sql")).fetchone()[0] == \
         "2026-09-20T09:00:00+00:00"
