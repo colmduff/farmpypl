@@ -399,9 +399,12 @@ SOIL_GROUP_BY_TYPE: dict[tuple[str, int], float] = {
 # =============================================================================
 # INPUTS AND COSTS (decision 18)
 # =============================================================================
-# The cost lines the calculator returns, in order. Volume first where an input
-# has one (feed t, fertiliser kg N, diesel L, electricity kWh, labour hours).
-COST_LINES: tuple[str, ...] = ("feed", "fertiliser", "diesel", "electricity", "labour", "other")
+# The cost lines the calculator returns, in order (decision 21: nine lines, chosen
+# by the Blossom aggregation study). Volume first where an input has one (feed t,
+# fertiliser kg N, diesel L, electricity kWh, labour hours); the three euro-only
+# lines have no public price, so no volume.
+COST_LINES: tuple[str, ...] = ("feed", "fertiliser", "diesel", "electricity", "labour",
+                               "contractor", "animal_health", "repairs", "other")
 
 # Our farm type -> the NFS system name used in nfs.db (tables 8A-8E only).
 NFS_SYSTEM: dict[str, str] = {
@@ -420,6 +423,9 @@ NFS_BENCHMARK_ITEMS: dict[str, list[tuple[str, str]]] = {
     "diesel_eur":       [(_O, "of which Fuel & Lub")],
     "electricity_eur":  [(_O, "Car, Electricity, Phone")],
     "labour_eur":       [(_D, "Casual Labour"), (_O, "Current Hired Labour")],
+    "contractor_eur":   [(_D, "Hire of Machinery")],
+    "animal_health_eur": [(_D, "Livestock (A.I. Vet etc.)")],
+    "repairs_eur":      [(_O, "Buildings Maintenance"), (_O, "Land Improvement Maintenance")],
     "total_costs_eur":  [(_O, "TOTAL NET EXPENSES")],
     "depreciation_eur": [(_O, "Machinery Depreciation"), (_O, "Buildings Depreciation"),
                          (_O, "Land Improvement Depreciation")],
@@ -438,3 +444,4 @@ PRICE_ITEMS: dict[str, str] = {
 }
 CAN_N_FRACTION: float = 0.275        # kg N per kg of CAN
 HOURS_PER_LABOUR_UNIT: float = 1800  # NFS definition of one labour unit
+STALE_AFTER_DAYS: int = 42           # from_csv warns when a price was fetched longer ago (advisory)

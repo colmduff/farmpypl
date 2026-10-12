@@ -6,12 +6,16 @@ temporary folder, so these tests never touch the internet or your real
 """
 
 import sqlite3
+from contextlib import closing
 import urllib.error
+from datetime import datetime, timedelta
 
 import pytest
 
-from farmpypl.common.constants import PRICE_ITEMS
-from farmpypl.db import connect, database_path, price_status, refresh_prices, user_data_dir
+from farmpypl.common.constants import NFS_BENCHMARK_ITEMS, PRICE_ITEMS, STALE_AFTER_DAYS
+from farmpypl.db import (connect, database_path, load_benchmark, price_status, refresh_prices,
+                         stale_prices, user_data_dir)
+from farmpypl.db import refresh
 from farmpypl.db.connect import bundled_path
 
 
@@ -103,7 +107,7 @@ def test_explicit_path_leaves_user_folder_alone(tmp_path, user_dir):
 
 
 def test_price_status_names_every_price_and_its_file():
-    with connect("prices.db") as con:
+    with closing(connect("prices.db")) as con:
         status = price_status(con)
     assert [s["price"] for s in status] == list(PRICE_ITEMS)
     assert all(s["n_obs"] > 0 and s["file"].endswith("prices.db") for s in status)
@@ -111,6 +115,50 @@ def test_price_status_names_every_price_and_its_file():
 
 def test_user_data_dir_follows_xdg(user_dir):
     assert user_data_dir() == user_dir
+
+
+
+def bundled_status():
+    with closing(connect("prices.db")) as con:
+        return price_status(con)
+
+
+def test_bundled_prices_are_fresh_on_the_day_they_were_fetched():
+    status = bundled_status()
+    fetched = max(datetime.fromisoformat(p["fetched_at"]) for p in status)
+    assert stale_prices(status, now=fetched) == []
+
+
+def test_every_price_is_stale_after_the_limit():
+    status = bundled_status()
+    newest = max(datetime.fromisoformat(p["fetched_at"]) for p in status)
+    later = newest + timedelta(days=STALE_AFTER_DAYS + 1)
+    assert stale_prices(status, now=later) == list(PRICE_ITEMS)
+
+
+def test_stale_prices_flags_only_the_old_one():
+    info = [{"price": "fresh", "fetched_at": "2026-10-01T00:00:00+00:00"},
+            {"price": "old", "fetched_at": "2026-07-01T00:00:00+00:00"}]
+    assert stale_prices(info, now=datetime.fromisoformat("2026-10-11T00:00:00+00:00")) == ["old"]
+
+
+def test_benchmark_has_the_nine_line_items():
+    with closing(connect("nfs.db")) as con:
+        nfs = load_benchmark(con, "dairy")
+    assert set(nfs) == set(NFS_BENCHMARK_ITEMS)
+    assert nfs["contractor_eur"] == 21371
+    assert nfs["animal_health_eur"] == 19068
+    assert nfs["repairs_eur"] == 4366 + 3842
+
+
+def test_refresh_command_prints_one_line_per_source(monkeypatch, capsys, user_dir):
+    monkeypatch.setattr(refresh, "SOURCES", {"fake": fake_rows, "down": unreachable})
+    with pytest.raises(SystemExit) as exit_:
+        refresh.main()
+    out = capsys.readouterr().out
+    assert exit_.value.code == 0  # one source worked
+    assert "ok    fake" in out and "FAIL  down" in out
+    assert str(user_dir / "prices.db") in out
 
 
 @pytest.mark.network

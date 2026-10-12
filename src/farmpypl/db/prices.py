@@ -1,8 +1,9 @@
 """Read-only access to the prices (prices.db: CSO, Eurostat, EU Oil Bulletin)."""
 
 import sqlite3
+from datetime import datetime, timezone
 
-from farmpypl.common.constants import PRICE_ITEMS
+from farmpypl.common.constants import PRICE_ITEMS, STALE_AFTER_DAYS
 from farmpypl.db.connect import sql
 
 
@@ -44,3 +45,16 @@ def price_status(con: sqlite3.Connection) -> list[dict]:
             "file": file,
         })
     return status
+
+
+def stale_prices(price_info: list[dict], now: datetime | None = None,
+                 max_age_days: int = STALE_AFTER_DAYS) -> list[str]:
+    """The prices in price_status() output that were fetched more than max_age_days ago.
+
+    Advisory: the caller decides whether to warn. ``now`` is for tests; default is
+    the current time. The age is from the fetch, not the period: CSO publishes
+    about ten weeks late, so a fresh fetch can still end months back.
+    """
+    now = now or datetime.now(timezone.utc)
+    return [p["price"] for p in price_info
+            if (now - datetime.fromisoformat(p["fetched_at"])).days > max_age_days]

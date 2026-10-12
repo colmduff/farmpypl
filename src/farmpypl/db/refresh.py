@@ -257,3 +257,18 @@ def refresh_prices(path: str | Path | None = None, sources: dict | None = None) 
     finally:
         con.close()
     return report
+
+
+def main() -> None:
+    """``farmpypl-refresh``: refresh the user copy and print one line per source.
+
+    The command prints; the library functions never do (decision 11).
+    """
+    report = refresh_prices()
+    for r in report:
+        if r["ok"]:
+            print(f"ok    {r['source']:<22} {r['n_rows']:>5} rows, newest {r['latest']}")
+        else:
+            print(f"FAIL  {r['source']:<22} {r['error']} (kept its cached rows)")
+    print(f"wrote {user_data_dir() / 'prices.db'}")
+    raise SystemExit(0 if any(r["ok"] for r in report) else 1)

@@ -12,4 +12,8 @@ class Farm:
     tillage_ha: float
     diesel_liters: float | None = None      # per year; None = use the NFS average
     electricity_kwh: float | None = None    # per year; None = use the NFS average
+    # Euro-only lines (no public price, so no volume): per year; None = NFS average.
+    contractor_eur: float | None = None
+    animal_health_eur: float | None = None  # vet, medicines, A.I. and breeding
+    repairs_eur: float | None = None        # buildings and land upkeep
     

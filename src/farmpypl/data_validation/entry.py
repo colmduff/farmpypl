@@ -26,9 +26,14 @@ class FarmProfileInput(BaseModel):
     fertilizer_per_hectare_kg: float | None = Field(default=None, ge=0, le=400)
     diesel_liters: float | None = Field(default=None, ge=0)
     electricity_kwh: float | None = Field(default=None, ge=0)
+    contractor_eur: float | None = Field(default=None, ge=0)
+    animal_health_eur: float | None = Field(default=None, ge=0)
+    repairs_eur: float | None = Field(default=None, ge=0)
+    organic_feed_eur: float | None = Field(default=None, ge=0)
 
     @field_validator(
         "concentrate_per_cow_kg", "fertilizer_per_hectare_kg", "diesel_liters", "electricity_kwh",
+        "contractor_eur", "animal_health_eur", "repairs_eur", "organic_feed_eur",
         mode="before",
     )
     @classmethod

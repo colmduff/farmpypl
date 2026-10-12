@@ -11,6 +11,7 @@ class DairyFarm(Farm):
     yield_per_cow_l: float
     concentrate_per_cow_kg: float | None = None     # per year; None = use the NFS average
     fertilizer_per_hectare_kg: float | None = None  # kg N per ha of grassland per year
+    organic_feed_eur: float | None = None           # per year; organic feed has no public price
     
 
     @property
