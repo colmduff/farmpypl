@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from farmpypl.common.constants import NFS_BENCHMARK_ITEMS, PRICE_ITEMS, STALE_AFTER_DAYS
-from farmpypl.db import (connect, database_path, load_benchmark, price_status, refresh_prices,
+from farmpypl.db import (connect, database_path, load_benchmark, load_prices, price_status, refresh_prices,
                          stale_prices, user_data_dir)
 from farmpypl.db import refresh
 from farmpypl.db.connect import bundled_path
@@ -148,7 +148,26 @@ def test_benchmark_has_the_nine_line_items():
     assert set(nfs) == set(NFS_BENCHMARK_ITEMS)
     assert nfs["contractor_eur"] == 21371
     assert nfs["animal_health_eur"] == 19068
-    assert nfs["repairs_eur"] == 4366 + 3842
+    assert nfs["maintenance_eur"] == 4366 + 3842
+
+
+def test_benchmark_income_items_add_up_to_gross_output():
+    """Milk + livestock (dairying - milk + cattle) + other = NFS TOTAL LIVESTOCK & CROPS."""
+    with closing(connect("nfs.db")) as con:
+        nfs = load_benchmark(con, "dairy")
+    assert nfs["milk_eur"] == 311767
+    assert nfs["subsidies_eur"] == 24991
+    assert nfs["uaa_ha"] == 69.2
+    livestock = nfs["dairying_eur"] - nfs["milk_eur"] + nfs["cattle_eur"]
+    other = nfs["output_total_eur"] - nfs["dairying_eur"] - nfs["cattle_eur"]
+    assert livestock == 79331
+    assert nfs["milk_eur"] + livestock + other == nfs["output_total_eur"] == 393159
+
+
+def test_load_prices_has_a_12_month_milk_price(user_dir):
+    with closing(connect("prices.db")) as con:
+        prices = load_prices(con)
+    assert 0.3 < prices["milk"] < 0.7   # EUR/L, the co-ops' A+B-C averaged (CSO AJM10)
 
 
 def test_refresh_command_prints_one_line_per_source(monkeypatch, capsys, user_dir):

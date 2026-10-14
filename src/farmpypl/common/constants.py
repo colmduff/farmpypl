@@ -404,7 +404,9 @@ SOIL_GROUP_BY_TYPE: dict[tuple[str, int], float] = {
 # fertiliser kg N, diesel L, electricity kWh, labour hours); the three euro-only
 # lines have no public price, so no volume.
 COST_LINES: tuple[str, ...] = ("feed", "fertiliser", "diesel", "electricity", "labour",
-                               "contractor", "animal_health", "repairs", "other")
+                               "contractor", "animal_health", "maintenance", "other")
+# Income lines (decision 27). Milk = litres x milk price; the rest are euro only.
+INCOME_LINES: tuple[str, ...] = ("milk", "livestock", "subsidies", "other")
 
 # Our farm type -> the NFS system name used in nfs.db (tables 8A-8E only).
 NFS_SYSTEM: dict[str, str] = {
@@ -425,10 +427,17 @@ NFS_BENCHMARK_ITEMS: dict[str, list[tuple[str, str]]] = {
     "labour_eur":       [(_D, "Casual Labour"), (_O, "Current Hired Labour")],
     "contractor_eur":   [(_D, "Hire of Machinery")],
     "animal_health_eur": [(_D, "Livestock (A.I. Vet etc.)")],
-    "repairs_eur":      [(_O, "Buildings Maintenance"), (_O, "Land Improvement Maintenance")],
+    "maintenance_eur":  [(_O, "Buildings Maintenance"), (_O, "Land Improvement Maintenance")],
     "total_costs_eur":  [(_O, "TOTAL NET EXPENSES")],
     "depreciation_eur": [(_O, "Machinery Depreciation"), (_O, "Buildings Depreciation"),
                          (_O, "Land Improvement Depreciation")],
+    # Income (table 8C, plus direct payments from 8A). Livestock output = dairying - milk + cattle.
+    "milk_eur":         [("LIVESTOCK", "of which milk")],
+    "dairying_eur":     [("LIVESTOCK", "Dairying")],          # milk + calves, culls of the dairy herd
+    "cattle_eur":       [("LIVESTOCK", "Cattle")],
+    "output_total_eur": [("CROPS", "TOTAL LIVESTOCK & CROPS")],  # gross output before payments
+    "subsidies_eur":    [("Overall Results (€)", "Direct Payments / Subs")],
+    "uaa_ha":           [("LAND (ha)", "U.A.A")],             # divisor for per-ha rates
     "livestock_units":  [("Grazing Livestock Units", "Total Livestock Units")],
     "labour_units":     [("LABOUR UNITS", "Total")],
 }
@@ -441,6 +450,7 @@ PRICE_ITEMS: dict[str, str] = {
     "diesel": "Heating gas oil (Ireland), with taxes",                 # EU Oil Bulletin, EUR/L, weekly
     "electricity": "Electricity, non-household band IA (<20 MWh), all taxes",  # Eurostat nrg_pc_205, EUR/kWh, half-yearly
     "road_diesel": "Automotive gas oil (Ireland), with taxes",          # EU Oil Bulletin, EUR/L, weekly
+    "milk": "Milk (per litre), actual fat and protein",               # CSO AJM10, EUR/L, monthly (the co-ops' A+B-C, averaged)
 }
 CAN_N_FRACTION: float = 0.275        # kg N per kg of CAN
 HOURS_PER_LABOUR_UNIT: float = 1800  # NFS definition of one labour unit
