@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from farmpypl.calculators import CostCalculator, HerdCalculator
+from farmpypl.calculators import CostCalculator, HerdCalculator, IncomeCalculator
 from farmpypl.common.constants import LU_COEFF
 from farmpypl.db import connect, load_benchmark, load_prices, price_status
 from farmpypl.farms import DairyFarm
@@ -96,6 +96,16 @@ class FarmManager:
         for farm in self.farms:
             livestock_units = HerdCalculator(farm).livestock_units() 
             calc = CostCalculator(farm, livestock_units, self.benchmarks[farm.farm_type], self.prices)
+            for line in calc.lines():
+                rows.append({"farm_name": farm.farm_name, **asdict(line)})
+        return pd.DataFrame(rows).round({"volume": 0, "eur": 0})
+
+    def income(self) -> pd.DataFrame:
+        """One row per farm and income line: volume, unit, euro, and where it came from."""
+        rows = []
+        for farm in self.farms:
+            livestock_units = HerdCalculator(farm).livestock_units()
+            calc = IncomeCalculator(farm, livestock_units, self.benchmarks[farm.farm_type], self.prices)
             for line in calc.lines():
                 rows.append({"farm_name": farm.farm_name, **asdict(line)})
         return pd.DataFrame(rows).round({"volume": 0, "eur": 0})

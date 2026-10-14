@@ -22,27 +22,32 @@ class CostCalculator:
 
     Workbook task 3. Every line follows one pattern:
       if the farmer gave a volume -> use it, source "farmer"
-      else                        -> NFS euro / price x scale, source "default"
+      else                        -> rate_per_lu / price * lu, source "default"
       euro = volume x price
+
+    Defaults are NFS rates per livestock unit (LU) times this farm's LU:
+    rate_per_lu["contractor_eur"] is EUR per LU on the NFS average farm.
     """
 
     def __init__(self, farm: DairyFarm, livestock_units: float,
                  benchmark: dict[str, float], prices: dict[str, float]):
         self.farm = farm
-        self.nfs = benchmark
         self.prices = prices
-        self.scale = livestock_units / benchmark["livestock_units"]
+        self.lu = livestock_units
+        # Every NFS figure as a rate per LU of the NFS average farm (e.g. EUR/LU, labour units/LU).
+        self.rate_per_lu = {name: value / benchmark["livestock_units"]
+                            for name, value in benchmark.items() if name != "livestock_units"}
 
 
     def feed(self) -> CostLine:
         price = self.prices["concentrates"]
-        bulky_eur = self.nfs["bulky_feed_eur"] * self.scale
+        bulky_eur = self.rate_per_lu["bulky_feed_eur"] * self.lu
 
         if self.farm.concentrate_per_cow_kg is not None:
             tonnes = self.farm.concentrate_per_cow_kg * self.farm.dairy_cows / 1000  # tonnes
             source = "farmer"
         else:
-            tonnes = self.nfs["concentrates_eur"] / price * self.scale  
+            tonnes = self.rate_per_lu["concentrates_eur"] / price * self.lu
             source = "default"
 
         return CostLine("feed", tonnes, "t concentrate", tonnes * price + bulky_eur, source) 
@@ -53,7 +58,7 @@ class CostCalculator:
             kg_n = self.farm.fertilizer_per_hectare_kg * self.farm.grassland_ha
             source = "farmer"
         else:
-            kg_n = self.nfs["fertiliser_eur"] / price * self.scale
+            kg_n = self.rate_per_lu["fertiliser_eur"] / price * self.lu
             source = "default"
 
         return CostLine("fertiliser", kg_n, "kg N", kg_n * price, source)
@@ -64,7 +69,7 @@ class CostCalculator:
             litres = self.farm.diesel_liters
             source = "farmer"
         else:
-            litres = self.nfs["diesel_eur"] / price * self.scale
+            litres = self.rate_per_lu["diesel_eur"] / price * self.lu
             source = "default"
 
         return CostLine("diesel", litres, "L", litres * price, source)
@@ -76,22 +81,50 @@ class CostCalculator:
             kwh = self.farm.electricity_kwh
             source = "farmer"
         else:
-            kwh = self.nfs["electricity_eur"] / price * self.scale
+            kwh = self.rate_per_lu["electricity_eur"] / price * self.lu
             source = "default"
 
         return CostLine("electricity", kwh, "kWh", kwh * price, source)
 
     def labour(self) -> CostLine:
-        hours = self.nfs["labour_units"] * HOURS_PER_LABOUR_UNIT * self.scale
-        return CostLine("labour", hours, "hours", self.nfs["labour_eur"] * self.scale, "default")
+        hours = self.rate_per_lu["labour_units"] * HOURS_PER_LABOUR_UNIT * self.lu
+        return CostLine("labour", hours, "hours", self.rate_per_lu["labour_eur"] * self.lu, "default")
 
+    def contractor(self) -> CostLine:
+        if self.farm.contractor_eur is not None:                  
+            eur = self.farm.contractor_eur
+            source = "farmer"
+        else:
+            eur = self.rate_per_lu["contractor_eur"] * self.lu  
+            source = "default"
+        return CostLine("contractor", None, "EUR", eur, source)  
+
+    def animal_health(self) -> CostLine:
+        if self.farm.animal_health_eur is not None:
+            eur = self.farm.animal_health_eur
+            source = "farmer"
+        else:
+            eur = self.rate_per_lu["animal_health_eur"] * self.lu
+            source = "default"
+        return CostLine("animal_health", None, "EUR", eur, source)
+
+    def maintenance(self) -> CostLine:
+        if self.farm.maintenance_eur is not None:
+            eur = self.farm.maintenance_eur
+            source = "farmer"
+        else:
+            eur = self.rate_per_lu["maintenance_eur"] * self.lu
+            source = "default"
+        return CostLine("maintenance", None, "EUR", eur, source)
+    
     def other(self) -> CostLine:
         named = ("concentrates_eur", "bulky_feed_eur", "fertiliser_eur",
-                 "diesel_eur", "electricity_eur", "labour_eur", "depreciation_eur")
-        other_eur = self.nfs["total_costs_eur"] - sum(self.nfs[k] for k in named)
-        return CostLine("other", None, "EUR", other_eur * self.scale, "default")
+                 "diesel_eur", "electricity_eur", "labour_eur", "contractor_eur", 
+                 "animal_health_eur", "maintenance_eur", "depreciation_eur")
+        other_rate = self.rate_per_lu["total_costs_eur"] - sum(self.rate_per_lu[k] for k in named)
+        return CostLine("other", None, "EUR", other_rate * self.lu, "default")
 
     def lines(self) -> list[CostLine]:
         """All six lines, in the order of COST_LINES."""
         return [self.feed(), self.fertiliser(), self.diesel(),
-                self.electricity(), self.labour(), self.other()]
+                self.electricity(), self.labour(), self.contractor(), self.animal_health(), self.maintenance(), self.other()]

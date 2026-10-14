@@ -37,6 +37,16 @@ def test_nfs_snapshot_has_benchmarks_and_no_prices():
         assert "prices" not in tables(con)
 
 
+
+def test_nfs_snapshot_has_sustainability_report_hours():
+    # Sustainability Report 2024, Table A1: main dairy operator, hours on farm, 2019-2024.
+    with open_ro("nfs.db") as con:
+        hours = con.execute(
+            "SELECT year, value FROM observations WHERE source_id = 'NFS2024S' "
+            "AND category = 'Dairying' AND line_item = 'Hours worked on farm' ORDER BY year").fetchall()
+    assert [y for y, _ in hours] == list(range(2019, 2025))
+    assert hours[-1][1] == 2558
+
 def test_prices_snapshot_has_prices_and_no_benchmarks():
     with open_ro("prices.db") as con:
         assert {"prices", "prices_latest", "refresh_log"} <= tables(con)

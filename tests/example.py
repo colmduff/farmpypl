@@ -18,6 +18,8 @@ def main():
     print("#"*40)
     print(manager.price_summary().drop(columns="file"))
     print("#"*40)
+    print(manager.income())
+    print("#"*40)
 
 
 if __name__ == "__main__":
