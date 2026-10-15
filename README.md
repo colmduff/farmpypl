@@ -83,6 +83,41 @@ NFS average (`default`). In the example above only diesel is `farmer`.
 A blank optional column means "use the NFS average for a farm this size"
 (scaled by livestock units).
 
+## Streamlit app
+
+`streamlit_app.py` is a simple web front end for the library. It loads the
+package from `src/`, so it runs straight from a clone.
+
+```bash
+poetry install                      # streamlit is a project dependency
+poetry run streamlit run streamlit_app.py
+```
+
+Or with pip: `pip install streamlit openpyxl`, then `streamlit run streamlit_app.py`.
+The app opens at http://localhost:8501.
+
+**Enter a farm** in the sidebar form: name, farm type, land areas, dairy cows
+and yield per cow. Optional inputs (feed, fertiliser, diesel, electricity,
+contractor, animal health, repairs, organic feed) each have a tick box: ticked
+uses your figure, unticked uses the NFS average. Click **Calculate**. The form's
+fields are read from `FarmProfileInput`, so a new input field shows up on its own.
+
+**Results** are shown in tabs:
+
+| Tab | Shows |
+|---|---|
+| Overview | Annual milk, livestock units, stocking rate (checked against the NFS band), total cost, cost per litre and per cow |
+| Farm | The farm as entered, plus a land-use chart |
+| Herd | Herd summary, and head or livestock units per cohort |
+| Costs | Each cost line, marked `farmer` or `default`, with totals per ha and per litre |
+| NFS benchmark | The NFS average farm, and your cost per livestock unit against it |
+| Prices | The prices used, which `prices.db` is in use, price history, and a **Refresh prices now** button (needs internet and `openpyxl`) |
+| Export | All results as one Excel file, a CSV zip, or single CSVs |
+
+A warning appears if any price was fetched more than 42 days ago.
+Invalid input (for example grassland + tillage > UAA) shows the validation
+message instead of results.
+
 ## What's in 0.1.0
 
 - **Farm models and validation**: `Farm` / `DairyFarm` dataclasses, checked on
@@ -127,7 +162,8 @@ annual figures and some prices are strongly seasonal.
   other sustainability indicators, before and after organic conversion.
 - **Additional farm types**: beef (cattle rearing and other cattle), sheep,
   tillage and mixed systems, following the NFS farm systems.
-- **Dashboard**: a simple front end on top of the library.
+- **Dashboard**: extend the Streamlit app (see above) as income, benchmarking
+  and environmental results are added.
 
 ## Development
 
