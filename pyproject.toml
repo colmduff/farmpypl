@@ -2,7 +2,7 @@
 name = "farmpypl"
 version = "0.1.0"
 description = "Income and organic-conversion calculator for an Irish dairy farm."
-authors = ["Colm Duffy <colm.p.duffy@gmail.com>"]
+authors = ["Colm Duffy <colm.p.duffy@gmail.com>", "Takfarinas Saber <Takfarinass.Saber@universityofgalway.ie>"]
 license = "MIT"
 readme = "README.md"
 packages = [{ include = "farmpypl", from = "src" }]
@@ -12,6 +12,8 @@ python = "^3.11"
 pydantic = "^2.13.5"
 pandas = "^3.0.6"
 openpyxl = {version = "^3.1.5", optional = true}  # only refresh_prices() needs it (Oil Bulletin .xlsx)
+streamlit = "^1.66.0"
+altair = "==6.3.0"
 
 [tool.poetry.extras]
 refresh = ["openpyxl"]
