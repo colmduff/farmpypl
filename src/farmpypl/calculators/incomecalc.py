@@ -1,7 +1,6 @@
 """Income for one farm: what it sells, and the direct payments it receives.
 
-Skeleton only (Claude, 14 Oct, at Colm's request): signatures and what each
-method should return. The bodies are Colm's (Workbook task F).
+Four lines (milk, livestock, subsidies, other), built the same way as costcalc.
 """
 
 from dataclasses import dataclass

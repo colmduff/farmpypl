@@ -4,6 +4,7 @@ This is the coordinator. It calls each layer in order and is the only
 module that knows the whole route. Nothing below it imports it.
 """
 
+import warnings
 from contextlib import closing
 from dataclasses import asdict
 from pathlib import Path
@@ -11,8 +12,8 @@ from pathlib import Path
 import pandas as pd
 
 from farmpypl.calculators import CostCalculator, HerdCalculator, IncomeCalculator
-from farmpypl.common.constants import LU_COEFF
-from farmpypl.db import connect, load_benchmark, load_prices, price_status
+from farmpypl.common.constants import LU_COEFF, STALE_AFTER_DAYS
+from farmpypl.db import connect, load_benchmark, load_prices, price_status, stale_prices
 from farmpypl.farms import DairyFarm
 from farmpypl.loaders import load_profiles
 
@@ -44,6 +45,11 @@ class FarmManager:
         with closing(connect("prices.db")) as con:
             prices = load_prices(con)
             price_info = price_status(con)
+
+        if stale := stale_prices(price_info):
+            warnings.warn(f"prices fetched over {STALE_AFTER_DAYS} days ago: {', '.join(stale)}. "
+                          "Run farmpypl-refresh or farmpypl.refresh_prices() to update.",
+                          stacklevel=2)
 
         return cls(farms=farms, benchmarks=benchmarks, prices=prices, price_info=price_info)   
 

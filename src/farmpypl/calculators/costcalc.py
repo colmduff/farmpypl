@@ -125,6 +125,6 @@ class CostCalculator:
         return CostLine("other", None, "EUR", other_rate * self.lu, "default")
 
     def lines(self) -> list[CostLine]:
-        """All six lines, in the order of COST_LINES."""
+        """All nine lines, in the order of COST_LINES."""
         return [self.feed(), self.fertiliser(), self.diesel(),
                 self.electricity(), self.labour(), self.contractor(), self.animal_health(), self.maintenance(), self.other()]
